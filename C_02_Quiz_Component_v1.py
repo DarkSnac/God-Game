@@ -48,26 +48,26 @@ class Play:
         # Body font for most labels
         body_font = "Arial 12"
 
-        # List for label details (text | font | background | row)
-        play_label_list = [
-            ["#/#", "Arial 16 bold", None, 0, "left"],
-            ["Random Question?", body_font, "#FFF2CC", 1],
-            ["You chose, result", body_font, "#D5E8D4", 4]
+        # Frame so that the title and rounds can be in the same row
+        self.title_round_frame = Frame(self.game_frame)
+        self.title_round_frame.grid(row=0)
+
+        # List for labels (frame | text | bg | font | row | column)
+        control_label_list = [
+            [self.title_round_frame, "#/#", None, "Arial 16 bold", 0, 0],
+            [self.title_round_frame, "Random Question?", None, "Arial 16 bold", 0, 1],
+            [self.game_frame, "You chose, result", "#D5E8D4", body_font, 4, 0]
         ]
 
-        play_labels_ref = []
-        for item in play_label_list:
-            make_label = Label(self.game_frame, text=item[0],
-                               font=item[1], bg=item[2],
-                               wraplength=300, justify='left',)
-            make_label.grid(row=item[3], pady=10, padx=10)
+        # # Create labels and add to list
+        control_ref_list = []
+        for item in control_label_list:
+            make_control_button = Label(item[0], text=item[1],
+                                        bg=item[2], font=item[3],
+                                        wraplength=300)
+            make_control_button.grid(row=item[4], column=item[5], pady=5, padx=5)
 
-            play_labels_ref.append(item)
-
-        # Retrieve labels so they can be configured later
-        self.heading_label = play_labels_ref[0]
-        self.target_label = play_labels_ref[1]
-        self.results_label = play_labels_ref[2]
+            control_ref_list.append(make_control_button)
 
         # Set up color buttons
         self.color_frame = Frame(self.game_frame)
@@ -85,12 +85,12 @@ class Play:
         self.hist_inst_quit_frame = Frame(self.game_frame)
         self.hist_inst_quit_frame.grid(row=5)
 
-        # List for buttons (frame | text | bg | command | width | row | column)
+        # List for buttons (frame | text | bg | command | font | width | row | column)
         control_button_list = [
-            [self.game_frame, "Next Round", "#0057D8", "", 21, 6, None, ],
-            [self.hist_inst_quit_frame, "History", "#FF8000", "", 10, 0, 0, ],
-            [self.hist_inst_quit_frame, "Hints", "#333333", "", 10, 0, 1],
-            [self.hist_inst_quit_frame, "Quit", "#990000", self.close_play, 10, 0, 3]
+            [self.game_frame, "Next Round", "#0057D8", "", "Arial 16 bold", 23, 6, None, ],
+            [self.hist_inst_quit_frame, "History", "#FF8000", "", "Arial 14 bold", 7, 0, 0, ],
+            [self.hist_inst_quit_frame, "Hints", "#333333", "", "Arial 14 bold", 7, 0, 1],
+            [self.hist_inst_quit_frame, "Quit", "#990000", self.close_play, "Arial 14 bold", 7, 0, 3]
         ]
 
         # # Create buttons and add to list
@@ -98,9 +98,9 @@ class Play:
         for item in control_button_list:
             make_control_button = Button(item[0], text=item[1],
                                          bg=item[2], command=item[3],
-                                         font="Arial 15 bold", fg="#FFFFFF",
-                                         width=item[4])
-            make_control_button.grid(row=item[5], column=item[6], pady=5, padx=5)
+                                         font=item[4], fg="#FFFFFF",
+                                         width=item[5], height=1)
+            make_control_button.grid(row=item[6], column=item[7], pady=5, padx=5)
 
             control_ref_list.append(make_control_button)
 
