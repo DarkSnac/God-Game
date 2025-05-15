@@ -255,10 +255,10 @@ class DisplayInstructions:
         self.instruction_frame.grid()
 
         # Set up heading
-        self.hint_heading_label = Label(self.instruction_frame,
+        self.guide_heading_label = Label(self.instruction_frame,
                                         text="Instructions",
                                         font="Arial 14 bold")
-        self.hint_heading_label.grid(row=0)
+        self.guide_heading_label.grid(row=0)
 
         instruction_text = "Instructions go here \n" \
                            "printing and typesetting industry. Lorem \n" \
@@ -285,7 +285,7 @@ class DisplayInstructions:
 
         # List and loop to set background color on
         # everything except the buttons
-        recolor_list = [self.instruction_frame, self.hint_heading_label,
+        recolor_list = [self.instruction_frame, self.guide_heading_label,
                         self.instruction_text_label]
 
         for item in recolor_list:
@@ -363,7 +363,7 @@ class Play:
 
         self.option_button_ref = []
 
-        # Frame to hold hints and stats buttons
+        # Frame to hold guide and stats buttons
         self.hist_inst_quit_frame = Frame(self.game_frame)
         self.hist_inst_quit_frame.grid(row=5)
 
@@ -371,7 +371,7 @@ class Play:
         control_button_list = [
             [self.game_frame, "Next Round", "#0057D8", self.new_round, "Arial 16 bold", 23, 6, None, ],
             [self.hist_inst_quit_frame, "History", "#FF8000", "", "Arial 14 bold", 7, 0, 0, ],
-            [self.hist_inst_quit_frame, "Hints", "#333333", "", "Arial 14 bold", 7, 0, 1],
+            [self.hist_inst_quit_frame, "Guide", "#333333", self.to_guide, "Arial 14 bold", 7, 0, 1],
             [self.hist_inst_quit_frame, "Quit", "#990000", self.close_play, "Arial 14 bold", 7, 0, 3]
         ]
 
@@ -386,10 +386,10 @@ class Play:
 
             control_ref_list.append(make_control_button)
 
-        # Retrieve next, history, hints and end button so that they can be configured
+        # Retrieve next, history, guide and end button so that they can be configured
         self.next_button = control_ref_list[0]
         self.hist_button = control_ref_list[1]
-        self.hints_button = control_ref_list[2]
+        self.guide_button = control_ref_list[2]
         self.end_game_button = control_ref_list[3]
 
         # Once interface has been created, invoke new
@@ -496,11 +496,93 @@ class Play:
         for item in self.option_button_ref:
             item.config(state=DISABLED)
 
+    def to_guide(self):
+        """
+        Displays guide for playing game
+        """
+        DisplayGuide(self)
+
     def close_play(self):
         # Reshow root (ie: choose rounds) and end
         # current game / allow new game to start
         root.deiconify()
         self.play_box.destroy()
+
+
+class DisplayGuide:
+    """
+    Displays guide for God Game
+    """
+
+    def __init__(self, partner):
+
+        # setup dialogue box and background color
+        background = "#ffe6cc"
+        self.guide_box = Toplevel()
+
+        # Disable all the buttons in the play GUI
+        partner.guide_button.config(state=DISABLED)
+        partner.hist_button.config(state=DISABLED)
+        partner.next_button.config(state=DISABLED)
+        partner.end_game_button.config(state=DISABLED)
+        for item in partner.option_button_ref:
+            item.config(state=DISABLED)
+
+        # If users press cross at top, closes help
+        # and enables help button
+        self.guide_box.protocol('WM_DELETE_WINDOW',
+                                partial(self.close_guide, partner))
+
+        # Set up the frame
+        self.guide_frame = Frame(self.guide_box, width=300,
+                                 height=200)
+        self.guide_frame.grid()
+
+        # Set up heading
+        self.guide_heading_label = Label(self.guide_frame,
+                                         text="Guide",
+                                         font="Arial 14 bold")
+        self.guide_heading_label.grid(row=0)
+
+        guide_text = "Good Luck!"
+
+        # Set up text
+        self.guide_text_label = Label(self.guide_frame,
+                                      text=guide_text,
+                                      wraplength=350,
+                                      justify="left")
+        self.guide_text_label.grid(row=1, padx=10)
+
+        # Set up dismiss button
+        self.dismiss_button = Button(self.guide_frame,
+                                     font="Arial 12 bold",
+                                     text="Dismiss",
+                                     bg="#cc6600",
+                                     fg="#FFFFFF",
+                                     command=partial(self.close_guide, partner))
+        self.dismiss_button.grid(row=2, padx=10, pady=10)
+
+        # List and loop to set background color on
+        # everything except the buttons
+        recolor_list = [self.guide_frame, self.guide_heading_label,
+                        self.guide_text_label]
+
+        for item in recolor_list:
+            item.config(bg=background)
+
+    def close_guide(self, partner):
+        """
+       Closes guide dialogue box (and enables guide button)
+        """
+
+        # Put all the buttons back to normal
+        partner.guide_button.config(state=NORMAL)
+        partner.hist_button.config(state=NORMAL)
+        partner.next_button.config(state=NORMAL)
+        partner.end_game_button.config(state=NORMAL)
+        for item in partner.option_button_ref:
+            item.config(state=NORMAL)
+        self.guide_box.destroy()
 
 
 # Main routine
