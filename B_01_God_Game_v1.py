@@ -321,6 +321,11 @@ class Play:
         self.rounds_played = IntVar()
         self.rounds_played.set(0)
 
+        self.rounds_won = IntVar()
+        self.rounds_won.set(0)
+
+        self.history_data = []
+
         self.play_box = Toplevel()
 
         self.game_frame = Frame(self.play_box)
@@ -370,7 +375,7 @@ class Play:
         # List for buttons (frame | text | bg | command | font | width | row | column)
         control_button_list = [
             [self.game_frame, "Next Round", "#0057D8", self.new_round, "Arial 16 bold", 23, 6, None, ],
-            [self.hist_inst_quit_frame, "History", "#FF8000", "", "Arial 14 bold", 7, 0, 0, ],
+            [self.hist_inst_quit_frame, "History", "#FF8000", self.to_history, "Arial 14 bold", 7, 0, 0, ],
             [self.hist_inst_quit_frame, "Guide", "#333333", self.to_guide, "Arial 14 bold", 7, 0, 1],
             [self.hist_inst_quit_frame, "Quit", "#990000", self.close_play, "Arial 14 bold", 7, 0, 3]
         ]
@@ -388,7 +393,7 @@ class Play:
 
         # Retrieve next, history, guide and end button so that they can be configured
         self.next_button = control_ref_list[0]
-        self.hist_button = control_ref_list[1]
+        self.history_button = control_ref_list[1]
         self.guide_button = control_ref_list[2]
         self.end_game_button = control_ref_list[3]
 
@@ -423,7 +428,6 @@ class Play:
                                             bg='#269db3',
                                             font='Arial 12 bold',
                                             text=self.option_list[item],
-                                            state=NORMAL,
                                             width=15, wraplength=150,
                                             height=height,
                                             command=partial(self.round_results, self.option_list[item]))
@@ -442,7 +446,6 @@ class Play:
                                             bg='#269db3',
                                             font='Arial 12 bold',
                                             text=self.option_list[item],
-                                            state=NORMAL,
                                             command=partial(self.round_results, self.option_list[item]))
                 self.option_button.grid(row=1,
                                         column=item % 2,
@@ -473,9 +476,21 @@ class Play:
         if user_choice == answer:
             result_text = f"Correct, Well done"
             result_bg = "#82B366"
+
+            # Retrieve rounds won then add one to it
+            rounds_won = self.rounds_won.get()
+            rounds_won += 1
+            self.rounds_won.set(rounds_won)
+
+            win_lose = 'win'
+
         else:
             result_text = f"Incorrect, Better luck next time"
             result_bg = "#F8CECC"
+
+            win_lose = 'lose'
+
+        self.history_data.append([win_lose, self.question, answer])
 
         for button in self.option_button_ref:
             if button.cget('text') == answer:
@@ -488,7 +503,7 @@ class Play:
         self.result_label.config(text=result_text, bg=result_bg)
 
         self.next_button.config(state=NORMAL)
-        self.hist_button.config(state=NORMAL)
+        self.history_button.config(state=NORMAL)
 
         if self.rounds_played.get() == self.rounds_wanted.get():
             self.next_button.config(state=DISABLED, text="Game Over")
@@ -501,6 +516,9 @@ class Play:
         Displays guide for playing game
         """
         DisplayGuide(self)
+
+    def to_history(self):
+        History(self, self.history_data)
 
     def close_play(self):
         # Reshow root (ie: choose rounds) and end
@@ -522,7 +540,7 @@ class DisplayGuide:
 
         # Disable all the buttons in the play GUI
         partner.guide_button.config(state=DISABLED)
-        partner.hist_button.config(state=DISABLED)
+        partner.history_button.config(state=DISABLED)
         partner.next_button.config(state=DISABLED)
         partner.end_game_button.config(state=DISABLED)
         for item in partner.option_button_ref:
@@ -577,12 +595,90 @@ class DisplayGuide:
 
         # Put all the buttons back to normal
         partner.guide_button.config(state=NORMAL)
-        partner.hist_button.config(state=NORMAL)
+        partner.history_button.config(state=NORMAL)
         partner.next_button.config(state=NORMAL)
         partner.end_game_button.config(state=NORMAL)
         for item in partner.option_button_ref:
             item.config(state=NORMAL)
         self.guide_box.destroy()
+
+
+class History:
+    def __init__(self, partner, all_history_info):
+        self.history_box = Toplevel()
+        partner.history_button.config(state=DISABLED)
+
+        self.history_box.protocol('WM_DELETE_WINDOW',
+                                  partial(self.close_history, partner))
+
+        self.history_frame = Frame(self.history_box, width=350)
+        self.history_frame.grid()
+
+        rounds_played = partner.rounds_played.get()
+        rounds_won = partner.rounds_won.get()
+
+        header_texts = [
+            ['History', "Arial 18 bold", ''],
+            [f'You got {rounds_won} / {rounds_played} questions correct', "Arial 14", 'w'],
+            ['-' * 70, "Arial 14", '']
+        ]
+
+        for count, (text, font, sticky) in enumerate(header_texts):
+            Label(self.history_frame, text=text, font=font,
+                  anchor="w", justify="left", fg='#000',
+                  padx=30, pady=5).grid(row=count, sticky=sticky, padx=10)
+
+        # Frame with Canvas and Scrollbar
+        canvas_frame = Frame(self.history_frame)
+        canvas_frame.grid(row=4, column=0)
+
+        # Create a canvas for the scrollbar
+        self.history_canvas = Canvas(canvas_frame, width=500, height=200)
+        self.history_canvas.grid(row=0, column=0)
+
+        # Creates a vertical scrollbar that's next to the history
+        self.scrollbar = Scrollbar(canvas_frame, orient="vertical", command=self.history_canvas.yview)
+        self.scrollbar.grid(row=0, column=1, sticky='ns')
+
+        self.history_canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        # Scrollable frame for history questions
+        self.past_question_frame = Frame(self.history_canvas)
+        self.history_canvas.create_window((0, 0), window=self.past_question_frame, anchor="nw")
+
+        # Update scroll region dynamically
+        self.past_question_frame.bind("<Configure>", lambda e:
+                                      self.history_canvas.configure(scrollregion=self.history_canvas.bbox("all")))
+
+        # Mousewheel support
+        self.history_canvas.bind_all("<MouseWheel>", lambda e:
+                                     self.history_canvas.yview_scroll(int(-1 * (e.delta / 120)), "units"))
+
+
+        for count, (result, question, user_answer) in enumerate(all_history_info):
+            if result == 'win':
+                icon = '✅'
+                color = '#049447'
+            else:
+                icon = '❌'
+                color = '#c90803'
+
+            text = f'{question} - {user_answer} {icon}'
+
+            Label(self.past_question_frame, text=text, font="Arial 14",
+                  justify="left", fg=color,
+                  padx=30, pady=5).grid(row=count, sticky='w', padx=10)
+
+        self.dismiss_button = Button(self.history_frame,
+                                     font="Arial 16 bold",
+                                     text="Dismiss", bg="#333333",
+                                     fg="#FFFFFF", width=20,
+                                     command=partial(self.close_history, partner))
+        self.dismiss_button.grid(row=8, padx=10, pady=10)
+
+    def close_history(self, partner):
+        partner.history_button.config(state=NORMAL)
+        self.history_box.destroy()
 
 
 # Main routine
