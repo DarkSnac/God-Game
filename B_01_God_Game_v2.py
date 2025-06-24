@@ -521,8 +521,13 @@ class Play:
             # If it's the right answer turn green
             if button.cget('text') == answer:
                 button.config(bg="#82B366",
+                          fg="#000000")
+            # if its wrong answer color red
+            elif button.cget('text') == user_choice and user_choice != answer:
+                button.config(bg="#e75e51",
                               fg="#000000")
-            # Otherwise red
+
+            # Otherwise grey
             else:
                 button.config(bg="#a3aaa4",
                               fg="#000000")
